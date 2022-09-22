@@ -1,3 +1,4 @@
+import { useState } from "react";
 import alfabeto from "./assets/alfabeto"
 import palavras from "./assets/palavras"
 
@@ -6,25 +7,35 @@ function importAll(r) {
 }
 const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$/));
 
+
 export default function App() {
-    const numErros = 2 // TODO Estados das imagens
-    const palavraSorteada = palavras[0] // TODO Sorteio da palavra
+    const [palavraSorteada, setPalavraSorteada] = useState("")
+    
+    // TODO Estados das imagens sendo alteradas conforme vamos jogando
+    
+    const [numErros, setNumErros] = useState(0)
+    const [palavraEmJogo, setPalavraEmJogo] = useState(Array(palavraSorteada.length).fill("_"))
+    console.log(palavraEmJogo.join(" "))
+
+    function iniciarJogo(){
+        setPalavraSorteada(palavras[Math.floor(Math.random() * palavras.length)])
+        setNumErros(0)
+    }
 
     return (
         <>
             <div className="jogo">
-                <img src={imagensForca[numErros - 1]} alt="Etapa do jogo" data-identifier='game-image' />
+                <img src={imagensForca[numErros].default} alt="Etapa do jogo" data-identifier='game-image' />
                 <div>
-                    <button data-identifier="choose-word">Escolher Palavra</button>
-                    <p data-identifier='word'>{palavraSorteada}</p>
+                    <button onClick={() => iniciarJogo()} data-identifier="choose-word">Escolher Palavra</button>
+                    <span data-identifier='word'>{palavraEmJogo.join(" ")}</span>
                 </div>
             </div>
 
-            <div className="letras">{alfabeto.map((l, index) => <button key={index} data-identifier='letter'>{l}</button>)}</div>
+            <div className="letras">{alfabeto.map((l, index) => <button key={index} data-identifier='letter'>{l.toUpperCase()}</button>)}</div>
 
             <div className="chute">
-                <span>Já sei a palavra!</span>
-                <input data-identifier='type-guess'></input>
+                <input data-identifier='type-guess' placeholder="Já sei a palavra!"></input>
                 <button data-identifier='guess-button'>Chutar</button>
             </div>
         </>
