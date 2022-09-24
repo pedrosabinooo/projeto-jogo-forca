@@ -17,15 +17,15 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 // [x]  Input e letras passam a ficar habilitadas
 // [x]  A contagem de erros nesse momento é 0, a imagem da forca vazia é mostrada
 // [x]  Você deve sortear uma das palavras do array que está no arquivo `palavras.js` para o usuário tentar adivinhar
-// [ ]  Aparece a palavra a ser adivinhada na tela, com um underline ( `_` ) para cada letra que a palavra possui
+// [x]  Aparece a palavra a ser adivinhada na tela, com um underline ( `_` ) para cada letra que a palavra possui
 
 // TODO Ao pressionar uma letra
-// [ ]  O botão de uma letra já clicada deve ficar desabilitado
+// [x]  O botão de uma letra já clicada deve ficar desabilitado
 // [ ]  Se a palavra escolhida no jogo tiver a letra que o usuário apertou:
 //     [ ]  O underline da posição correspondente à letra deve ser substituído pela letra em si
 //     [ ]  Uma letra com ou sem acento deve ser aceita (quando a pessoa aperta a, se a palavra tem á, à, â ou ã, ela também irá aparecer. O mesmo vale para c e ç)
-// [ ]  Se a palavra escolhida no jogo NÃO tiver a letra que o usuário apertou:
-//     [ ]  Sua contagem de erros deve aumentar
+// [x]  Se a palavra escolhida no jogo NÃO tiver a letra que o usuário apertou:
+//     [x]  Sua contagem de erros deve aumentar
 //     [x]  A imagem na forca deve mudar (forca0 > forca1 > forca2… e assim sucessivamente)
 
 // TODO Input de chute
@@ -45,33 +45,50 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 // BONUS Reiniciar o jogo
 // [x]  A qualquer momento, o usuário pode reiniciar o jogo pressionando o botão “escolher palavra”
 // [x]  Uma nova palavra é sorteada
-// [ ]  O jogo deve voltar ao estado inicial (0 erros, imagem inicial da forca, palavra apenas com risquinhos, input limpo, todos os botões de letras habilitados)
+// [x]  O jogo deve voltar ao estado inicial (0 erros, imagem inicial da forca, palavra apenas com risquinhos, input limpo, todos os botões de letras habilitados)
 //
 
 
 export default function App() {
     const [numErros, setNumErros] = useState(0)
-    const [palavraEmJogo, setPalavraEmJogo] = useState("Clique em 'Escolher Palavra' para jogar")
+    const [palavraEscolhida, setPalavraEscolhida] = useState("")
     const [corPalavraEmJogo, setCorPalavraEmJogo] = useState("black")
-    const [letraDesabilitada, setLetraDesabilitada] = useState(true)
+    const [letrasTestadas, setLetrasTestadas] = useState(alfabeto)
     const [chuteDesabilitado, setChuteDesabilitado] = useState(true)
     const [chute, setChute] = useState("")
-    let palavraEmJogoArray = palavraEmJogo.split("")
+    let palavraEscolhidaArray = palavraEscolhida.split("")
+    let palavraEscondidaArray = palavraEscolhidaArray.map((l) => "_")
+    let palavraEmJogo = [...palavraEscondidaArray]
 
     function iniciarJogo() {
         let novaPalavra = palavras[Math.floor(Math.random() * palavras.length)].toUpperCase()
-        setPalavraEmJogo(novaPalavra)
-        palavraEmJogoArray = novaPalavra.split("")
+        setPalavraEscolhida(novaPalavra)
         console.log(novaPalavra)
-        console.log(palavraEmJogoArray)
+        palavraEscolhidaArray = novaPalavra.split("")
+        palavraEscondidaArray = novaPalavra.split("").map((l) => "_")
+        console.log(palavraEscolhidaArray)
+        console.log(palavraEscondidaArray)
         setNumErros(0)
-        setLetraDesabilitada(false)
+        setLetrasTestadas([])
         setChuteDesabilitado(false)
         setCorPalavraEmJogo("black")
     }
 
+    function checkLetra(l,index) {
+        console.log(l)
+        const letra = l.toUpperCase()
+        if (palavraEscolhidaArray.includes(letra)) {
+            console.log("Acertou a letra: ", letra)
+            palavraEmJogo.map((l,index) => l===letra ? palavraEscolhidaArray[index] : palavraEmJogo[index])
+        } else {
+            console.log("A palavra não contém a letra: ", letra)
+            setNumErros(numErros + 1)
+        }
+        setLetrasTestadas([...letrasTestadas,l])
+    }
+
     function checkChute() {
-        if (chute.toUpperCase() === palavraEmJogo) {
+        if (chute.toUpperCase() === palavraEscolhida) {
             console.log("Venceu!")
             setCorPalavraEmJogo("green")
         } else {
@@ -92,24 +109,32 @@ export default function App() {
 
             <Jogo>
                 <img src={imagensForca[numErros].default} alt="Imagem da forca" data-identifier='game-image' />
-                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEmJogo === "Clique em 'Escolher Palavra' para jogar" ? palavraEmJogo : palavraEmJogoArray.join(" ")}</PalavraEmJogo>
+                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEscolhida==="" ? "Clique em 'Escolher Palavra' para jogar" : palavraEmJogo.join(" ")}</PalavraEmJogo>
             </Jogo>
 
-            <Letras>{alfabeto.map((l, index) => <BotaoLetra key={index} disabled={letraDesabilitada} data-identifier='letter'>{l.toUpperCase()}</BotaoLetra>)}</Letras>
+            <Letras>{alfabeto.map(
+                (l, index) =>
+                    <BotaoLetra
+                        key={index}
+                        onClick={() => checkLetra(l,index)}
+                        disabled={letrasTestadas.includes(l)}
+                        data-identifier='letter'>
+                        {l.toUpperCase()}
+                    </BotaoLetra>
+            )}</Letras>
 
             <Chute>
-                <input 
-                    data-identifier='type-guess' 
-                    onChange={e => setChute(e.target.value)} 
-                    value={chute} 
+                <input
+                    data-identifier='type-guess'
+                    onChange={e => setChute(e.target.value)}
+                    value={chute}
                     disabled={chuteDesabilitado}
-                    placeholder="Já sei a palavra!" 
+                    placeholder="Já sei a palavra!"
                 />
                 <BotaoChutar
                     onClick={() => checkChute()}
                     disabled={chuteDesabilitado}
-                    data-identifier='guess-button'
-                >
+                    data-identifier='guess-button'>
                     Chutar
                 </BotaoChutar>
             </Chute>
