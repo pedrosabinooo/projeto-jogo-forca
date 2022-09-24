@@ -52,6 +52,8 @@ const GlobalStyle = createGlobalStyle`
         box-sizing: border-box;
         font-size: 15px;
         font-weight: bold;
+        font-family: 'Quicksand', sans-serif;
+
     }
     
     body {

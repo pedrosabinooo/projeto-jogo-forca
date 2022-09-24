@@ -11,10 +11,10 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 
 // TODO-LIST
 // TODO Antes de o jogo iniciar
-// [ ]  Input e botões de letras devem estar desabilitados
+// [x]  Input e botões de letras devem estar desabilitados
 
 // TODO Ao apertar “escolher palavra”
-// [ ]  Input e letras passam a ficar habilitadas
+// [x]  Input e letras passam a ficar habilitadas
 // [x]  A contagem de erros nesse momento é 0, a imagem da forca vazia é mostrada
 // [x]  Você deve sortear uma das palavras do array que está no arquivo `palavras.js` para o usuário tentar adivinhar
 // [ ]  Aparece a palavra a ser adivinhada na tela, com um underline ( `_` ) para cada letra que a palavra possui
@@ -36,33 +36,50 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 // TODO Fim de jogo
 // [ ]  Botões de letras e input de chute devem ser desabilitados
 // [ ]  Caso o usuário ganhe:
-//     [ ]  Quando o usuário ganha, a palavra completa fica em **verde** e os botões e input voltam a ficar desabilitados
-//     [ ]  Para continuar a jogar, o usuário deve apertar o botão “Escolher Palavra”, e o jogo será reiniciado do zero
+//     [ ]  Quando o usuário ganha, a palavra completa fica em **verde** e os botões e input voltam a ficar desabilitados // BUG
+//     [x]  Para continuar a jogar, o usuário deve apertar o botão “Escolher Palavra”, e o jogo será reiniciado do zero
 // [ ]  Caso o usuário perca:
-//     [ ]  A imagem final que deve aparecer é a do boneco enforcado (forca6)
-//     [ ]  A palavra deve ser revelada, mas em **vermelho**
+//     [x]  A imagem final que deve aparecer é a do boneco enforcado (forca6)
+//     [ ]  A palavra deve ser revelada, mas em **vermelho** // BUG
 
 // BONUS Reiniciar o jogo
-// [ ]  A qualquer momento, o usuário pode reiniciar o jogo pressionando o botão “escolher palavra”
-// [ ]  Uma nova palavra é sorteada
+// [x]  A qualquer momento, o usuário pode reiniciar o jogo pressionando o botão “escolher palavra”
+// [x]  Uma nova palavra é sorteada
 // [ ]  O jogo deve voltar ao estado inicial (0 erros, imagem inicial da forca, palavra apenas com risquinhos, input limpo, todos os botões de letras habilitados)
 //
 
 
 export default function App() {
     const [numErros, setNumErros] = useState(0)
-    const [palavraEmJogo, setPalavraEmJogo] = useState("Clique em 'Escolher Palavra' para começar")
-    const [botaoDesabilitado, setBotaoDesabilitado] = useState(true)
+    const [palavraEmJogo, setPalavraEmJogo] = useState("Clique em 'Escolher Palavra' para jogar")
+    const [corPalavraEmJogo, setCorPalavraEmJogo] = useState("black")
+    const [letraDesabilitada, setLetraDesabilitada] = useState(true)
+    const [chuteDesabilitado, setChuteDesabilitado] = useState(true)
     const [chute, setChute] = useState("")
     let palavraEmJogoArray = palavraEmJogo.split("")
 
     function iniciarJogo() {
-        setPalavraEmJogo(palavras[Math.floor(Math.random() * palavras.length)].toUpperCase())
-        palavraEmJogoArray = palavraEmJogo.split("")
-        console.log(palavraEmJogo)
+        let novaPalavra = palavras[Math.floor(Math.random() * palavras.length)].toUpperCase()
+        setPalavraEmJogo(novaPalavra)
+        palavraEmJogoArray = novaPalavra.split("")
+        console.log(novaPalavra)
         console.log(palavraEmJogoArray)
         setNumErros(0)
-        setBotaoDesabilitado(false)
+        setLetraDesabilitada(false)
+        setChuteDesabilitado(false)
+        setCorPalavraEmJogo("black")
+    }
+
+    function checkChute() {
+        if (chute.toUpperCase() === palavraEmJogo) {
+            console.log("Venceu!")
+            setCorPalavraEmJogo("green")
+        } else {
+            console.log("Perdeu!")
+            setCorPalavraEmJogo("red")
+            setNumErros(6)
+        }
+        setChute("")
     }
 
     return (
@@ -75,14 +92,26 @@ export default function App() {
 
             <Jogo>
                 <img src={imagensForca[numErros].default} alt="Imagem da forca" data-identifier='game-image' />
-                <PalavraEmJogo data-identifier='word'>{palavraEmJogoArray}</PalavraEmJogo>
+                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEmJogo === "Clique em 'Escolher Palavra' para jogar" ? palavraEmJogo : palavraEmJogoArray.join(" ")}</PalavraEmJogo>
             </Jogo>
 
-            <Letras>{alfabeto.map((l, index) => <BotaoLetra key={index} data-identifier='letter'>{l.toUpperCase()}</BotaoLetra>)}</Letras>
+            <Letras>{alfabeto.map((l, index) => <BotaoLetra key={index} disabled={letraDesabilitada} data-identifier='letter'>{l.toUpperCase()}</BotaoLetra>)}</Letras>
 
             <Chute>
-                <input data-identifier='type-guess' onChange={e => setChute(e.target.value)} placeholder="Já sei a palavra!" />
-                <BotaoChutar onClick={() => chute.toUpperCase()===palavraEmJogo ? console.log("Venceu!") : console.log("Perdeu!")} disabled={botaoDesabilitado} data-identifier='guess-button'>Chutar</BotaoChutar>
+                <input 
+                    data-identifier='type-guess' 
+                    onChange={e => setChute(e.target.value)} 
+                    value={chute} 
+                    disabled={chuteDesabilitado}
+                    placeholder="Já sei a palavra!" 
+                />
+                <BotaoChutar
+                    onClick={() => checkChute()}
+                    disabled={chuteDesabilitado}
+                    data-identifier='guess-button'
+                >
+                    Chutar
+                </BotaoChutar>
             </Chute>
         </Container>
     )
@@ -98,6 +127,8 @@ const Container = styled.div`
     width: 100%;
     height: 100%;
     font-size: 50px;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: bold;
 `
 const BotaoEscolherPalavra = styled.button`
     background-color: #27AE60;
@@ -105,6 +136,7 @@ const BotaoEscolherPalavra = styled.button`
     border-radius: 5px;
     border: none;
     height: 40px;
+    min-height: 40px;
     width: 170px;
     margin-top: 35px;
     margin-bottom: 20px;
@@ -121,13 +153,16 @@ const Jogo = styled.div`
     width: 100%;
 
     img {
-        width: 450px;
+        width: 350px;
         padding: 25px;
     }
 `
 const PalavraEmJogo = styled.span`
     font-size: 30px;
-    font-weight: bold;
+    font-weight: 500;
+    font-family: 'Quicksand', sans-serif;
+    color: ${(props) => props.color}
+    margin: 20px;
 `
 const Letras = styled.div`
     display: grid;
@@ -149,8 +184,11 @@ const BotaoLetra = styled.button`
     &:hover {
         filter: brightness(0.9);
         cursor: pointer;
-      }
-
+    }
+    &:disabled {
+        filter: brightness(0.9);
+        cursor: default;
+    }
 `
 const Chute = styled.div`
     display: flex;
@@ -166,20 +204,20 @@ const Chute = styled.div`
         height: 30px;
         font-weight: 100;
     }
-    
-    span {
-        white-space: nowrap;
-    }
 `
 const BotaoChutar = styled.button`
-    background-color: #E1ECF4;
-    color: #49799E;
+    background-color: #FF6C0C;
+    color: #FFFFFF;
     border-radius: 5px;
-    border: 3px solid #49799E;
+    border: none;
     width: 110px;
     height: 30px;
     &:hover {
         filter: brightness(0.9);
         cursor: pointer;
-      }
+    }
+    &:disabled {
+        filter: brightness(0.9);
+        cursor: default;
+    }
 `
