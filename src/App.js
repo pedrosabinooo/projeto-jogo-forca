@@ -1,6 +1,7 @@
 import { useState } from "react";
 import alfabeto from "./assets/alfabeto";
 import palavras from "./assets/palavras";
+import removeDiacritics from "./assets/removeDiacritics";
 import styled from 'styled-components';
 import GlobalStyle from "./GlobalStyle";
 
@@ -22,7 +23,7 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 // TODO Ao pressionar uma letra
 // [x]  O botão de uma letra já clicada deve ficar desabilitado
 // [ ]  Se a palavra escolhida no jogo tiver a letra que o usuário apertou:
-//     [ ]  O underline da posição correspondente à letra deve ser substituído pela letra em si
+//     [x]  O underline da posição correspondente à letra deve ser substituído pela letra em si
 //     [ ]  Uma letra com ou sem acento deve ser aceita (quando a pessoa aperta a, se a palavra tem á, à, â ou ã, ela também irá aparecer. O mesmo vale para c e ç)
 // [x]  Se a palavra escolhida no jogo NÃO tiver a letra que o usuário apertou:
 //     [x]  Sua contagem de erros deve aumentar
@@ -30,17 +31,17 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 
 // TODO Input de chute
 // [x]  Caso o usuário deseje, ele pode chutar a palavra inteira no input
-// [ ]  Ao fazer isso, se acertar a palavra, ele ganha imediatamente
-// [ ]  Mas, se errar, ele perde imediatamente, independente da contagem anterior de erros. A imagem que deve aparecer nesse momento é a do bonequinho enforcado (forca6)
+// [x]  Ao fazer isso, se acertar a palavra, ele ganha imediatamente
+// [x]  Mas, se errar, ele perde imediatamente, independente da contagem anterior de erros. A imagem que deve aparecer nesse momento é a do bonequinho enforcado (forca6)
 
 // TODO Fim de jogo
-// [ ]  Botões de letras e input de chute devem ser desabilitados
-// [ ]  Caso o usuário ganhe:
-//     [ ]  Quando o usuário ganha, a palavra completa fica em **verde** e os botões e input voltam a ficar desabilitados // BUG
+// [x]  Botões de letras e input de chute devem ser desabilitados
+// [x]  Caso o usuário ganhe:
+//     [x]  Quando o usuário ganha, a palavra completa fica em **verde** e os botões e input voltam a ficar desabilitados
 //     [x]  Para continuar a jogar, o usuário deve apertar o botão “Escolher Palavra”, e o jogo será reiniciado do zero
-// [ ]  Caso o usuário perca:
+// [x]  Caso o usuário perca:
 //     [x]  A imagem final que deve aparecer é a do boneco enforcado (forca6)
-//     [ ]  A palavra deve ser revelada, mas em **vermelho** // BUG
+//     [x]  A palavra deve ser revelada, mas em **vermelho**
 
 // BONUS Reiniciar o jogo
 // [x]  A qualquer momento, o usuário pode reiniciar o jogo pressionando o botão “escolher palavra”
@@ -48,54 +49,56 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 // [x]  O jogo deve voltar ao estado inicial (0 erros, imagem inicial da forca, palavra apenas com risquinhos, input limpo, todos os botões de letras habilitados)
 //
 
-
 export default function App() {
     const [numErros, setNumErros] = useState(0)
     const [palavraEscolhida, setPalavraEscolhida] = useState("")
+    const [palavraEmJogo, setPalavraEmJogo] = useState([...palavraEscolhida.split("").map((l) => "_")])
     const [corPalavraEmJogo, setCorPalavraEmJogo] = useState("black")
     const [letrasTestadas, setLetrasTestadas] = useState(alfabeto)
     const [chuteDesabilitado, setChuteDesabilitado] = useState(true)
     const [chute, setChute] = useState("")
-    let palavraEscolhidaArray = palavraEscolhida.split("")
-    let palavraEscondidaArray = palavraEscolhidaArray.map((l) => "_")
-    let palavraEmJogo = [...palavraEscondidaArray]
 
     function iniciarJogo() {
         let novaPalavra = palavras[Math.floor(Math.random() * palavras.length)].toUpperCase()
         setPalavraEscolhida(novaPalavra)
         console.log(novaPalavra)
-        palavraEscolhidaArray = novaPalavra.split("")
-        palavraEscondidaArray = novaPalavra.split("").map((l) => "_")
-        console.log(palavraEscolhidaArray)
-        console.log(palavraEscondidaArray)
+        setPalavraEmJogo(novaPalavra.split("").map((l) => "_"))
         setNumErros(0)
         setLetrasTestadas([])
         setChuteDesabilitado(false)
         setCorPalavraEmJogo("black")
     }
 
-    function checkLetra(l,index) {
-        console.log(l)
-        const letra = l.toUpperCase()
-        if (palavraEscolhidaArray.includes(letra)) {
-            console.log("Acertou a letra: ", letra)
-            palavraEmJogo.map((l,index) => l===letra ? palavraEscolhidaArray[index] : palavraEmJogo[index])
+    function checkLetra(letra) {
+        const letraMaiuscula = letra.toUpperCase()
+        let novaPalavraEmJogo = [...palavraEmJogo]
+        if (palavraEscolhida.split("").includes(letraMaiuscula)) {
+            novaPalavraEmJogo = [...palavraEscolhida.split("").map((l, index) => removeDiacritics(l) === letraMaiuscula ? palavraEscolhida.split("")[index] : palavraEmJogo[index])]
+            setPalavraEmJogo(novaPalavraEmJogo)
+            console.log(novaPalavraEmJogo)
         } else {
-            console.log("A palavra não contém a letra: ", letra)
             setNumErros(numErros + 1)
         }
-        setLetrasTestadas([...letrasTestadas,l])
+        setLetrasTestadas([...letrasTestadas, letra])
+        novaPalavraEmJogo.join(" ") === palavraEscolhida.split("").join(" ") ? ganhou() : (numErros + 1 === 6 ? perdeu() : console.log("Próxima letra"))
     }
 
-    function checkChute() {
-        if (chute.toUpperCase() === palavraEscolhida) {
-            console.log("Venceu!")
-            setCorPalavraEmJogo("green")
-        } else {
-            console.log("Perdeu!")
-            setCorPalavraEmJogo("red")
-            setNumErros(6)
-        }
+    function ganhou() {
+        console.log("Venceu!")
+        setCorPalavraEmJogo("green")
+        setPalavraEmJogo([...palavraEscolhida.split("")])
+        setLetrasTestadas(alfabeto)
+        setChuteDesabilitado(true)
+        setChute("")
+    }
+
+    function perdeu() {
+        console.log("Perdeu!")
+        setCorPalavraEmJogo("red")
+        setPalavraEmJogo([...palavraEscolhida.split("")])
+        setNumErros(6)
+        setLetrasTestadas(alfabeto)
+        setChuteDesabilitado(true)
         setChute("")
     }
 
@@ -109,14 +112,14 @@ export default function App() {
 
             <Jogo>
                 <img src={imagensForca[numErros].default} alt="Imagem da forca" data-identifier='game-image' />
-                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEscolhida==="" ? "Clique em 'Escolher Palavra' para jogar" : palavraEmJogo.join(" ")}</PalavraEmJogo>
+                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEscolhida === "" ? "Clique em 'Escolher Palavra' para jogar" : palavraEmJogo.join(" ")}</PalavraEmJogo>
             </Jogo>
 
             <Letras>{alfabeto.map(
                 (l, index) =>
                     <BotaoLetra
                         key={index}
-                        onClick={() => checkLetra(l,index)}
+                        onClick={() => checkLetra(l)}
                         disabled={letrasTestadas.includes(l)}
                         data-identifier='letter'>
                         {l.toUpperCase()}
@@ -132,7 +135,7 @@ export default function App() {
                     placeholder="Já sei a palavra!"
                 />
                 <BotaoChutar
-                    onClick={() => checkChute()}
+                    onClick={() => removeDiacritics(chute).toUpperCase() === removeDiacritics(palavraEscolhida).toUpperCase() ? ganhou() : perdeu()}
                     disabled={chuteDesabilitado}
                     data-identifier='guess-button'>
                     Chutar
@@ -186,8 +189,8 @@ const PalavraEmJogo = styled.span`
     font-size: 30px;
     font-weight: 500;
     font-family: 'Quicksand', sans-serif;
-    color: ${(props) => props.color}
-    margin: 20px;
+    color: ${(props) => props.color};
+    margin: 10px;
 `
 const Letras = styled.div`
     display: grid;
